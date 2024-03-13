@@ -1,0 +1,396 @@
+Program.Sub.ScreenSU.Start
+Gui.F_Main..create
+Gui.F_Main..caption("Message")
+Gui.F_Main..size(4890,2010)
+Gui.F_Main..minx(0)
+Gui.F_Main..miny(0)
+Gui.F_Main..position(0,0)
+Gui.F_Main..event(UnLoad,F_End)
+Gui.F_Main..forecolor(0)
+Gui.F_Main..BackColor(-2147483633)
+Gui.F_Main..maxbutton(False)
+Gui.F_Main..minbutton(False)
+Gui.F_Main..mousepointer(0)
+Gui.F_Main.frmBT.create(frame)
+Gui.F_Main.frmBT.size(2685,705)
+Gui.F_Main.frmBT.position(945,750)
+Gui.F_Main.frmBT.borderstyle(0)
+Gui.F_Main.cmdProcess.create(button)
+Gui.F_Main.cmdProcess.caption("Process")
+Gui.F_Main.cmdProcess.size(855,375)
+Gui.F_Main.cmdProcess.position(200,200)
+Gui.F_Main.cmdProcess.parent("frmBT")
+Gui.F_Main.cmdProcess.event(Click,cmdProcess)
+Gui.F_Main.cmdProcess.defaultvalue("")
+Gui.F_Main.cmdExit.create(button)
+Gui.F_Main.cmdExit.caption("Exit")
+Gui.F_Main.cmdExit.size(855,375)
+Gui.F_Main.cmdExit.position(1600,200)
+Gui.F_Main.cmdExit.parent("frmBT")
+Gui.F_Main.cmdExit.event(Click,F_End)
+Gui.F_Main.cmdExit.defaultvalue("")
+Gui.F_Main.lblMsg2.Create(Label,"and pull in new information?",True,4215,300,1,105,450,True,0,"Arial",12,-2147483633,0)
+Gui.F_Main.lblMsg2.DefaultValue("")
+Gui.F_Main.lblMsg.create(label,"Do you want to clear the sales forecast",True,4215,315,1,105,135,True,0,Arial,12,-2147483633,0)
+Gui.F_Main.lblMsg.defaultvalue("")
+Gui.F_Process..create
+Gui.F_Process..caption("Message - Process")
+Gui.F_Process..size(4365,2070)
+Gui.F_Process..minx(0)
+Gui.F_Process..miny(0)
+Gui.F_Process..position(0,0)
+Gui.F_Process..forecolor(0)
+Gui.F_Process..BackColor(-2147483633)
+Gui.F_Process..maxbutton(False)
+Gui.F_Process..minbutton(False)
+Gui.F_Process..mousepointer(0)
+Gui.F_Process.lblPr.create(label,"Processing ...",True,3225,510,0,400,500,True,0,Arial,12,-2147483633,0)
+Gui.F_Process.lblPr.defaultvalue("")
+Program.Sub.ScreenSU.End
+
+Program.Sub.Preflight.Start
+Variable.UDT.uInvOrdQty.Define("QTY_ORDER",Float,"QTY_ORDER")
+Variable.UDT.uInvOrdQty.Define("KEY_DATE",String,"KEY_DATE")
+Variable.UDT.uInvOrdQty.Define("KEY_TIME",String,"KEY_TIME")
+Variable.UDT.uInvOrdQty.Define("QTY_ONHAND",Float,"QTY_ONHAND")
+Variable.UDT.uInvOrdQty.Define("QTY_ONORDER_PO",Float,"QTY_ONORDER_PO")
+Variable.UDT.uInvOrdQty.Define("QTY_ONORDER_WO",Float,"QTY_ONORDER_WO")
+Variable.UDT.uInvOrdQty.Define("QTY_REQUIRED",Float,"QTY_REQUIRED")
+Variable.UDT.uInvOrdQty.Define("QTY_REORDER",Float,"QTY_REORDER")
+Variable.UDT.uInvOrdQty.Define("PART",String,"PART")
+Variable.UDT.uInvOrdQty.Define("LOC",String,"LOC")
+Variable.uGlobal.uInvOrdQty.Declare("uInvOrdQty")
+Variable.UDT.uForeImpLine.Define("KEY_DATE",String)
+Variable.UDT.uForeImpLine.Define("KEY_TIME",String)
+Variable.UDT.uForeImpLine.Define("REQUIRED",Date,"REQUIRED")
+Variable.UDT.uForeImpLine.Define("QUANTITY",Float,"QUANTITY")
+Variable.UDT.uForeImpLine.Define("PART",String,"PART")
+Variable.UDT.uForeImpLine.Define("LOC",String,"LOC")
+Variable.UDT.uForeImpLine.Define("KEY_SEQ",Long)
+Variable.uGlobal.uForeImpLine.Declare("uForeImpLine")
+Program.Sub.Preflight.End
+
+Program.Sub.Main.Start
+' 02/29/2016 RGRC For Geater
+'Mod 09/30/16 RGRC for Driv-Lok
+'Mod 04/16/20 RGRC
+'Mod 05/01/20 RGRC
+
+V.Local.sSqlForeVerify.Declare(String)
+V.Global.sFile.Declare(String)
+V.Local.bExists.Declare(Boolean)
+
+F.Intrinsic.String.Build("{0}\FORECAST.TXT",V.Caller.FilesDir,V.Global.sFile)
+
+V.Local.sSqlForeVerify.Set("Select * From FORECAST_IMPORT_HDR")
+
+F.Intrinsic.File.Exists(V.Global.sFile,V.Local.bExists)
+
+F.Intrinsic.Control.If(V.Local.bExists,=,False)
+	'Create/Open Connection
+	F.ODBC.Connection!Conx.OpenConnection(V.Ambient.PDSN,V.Ambient.PUser,V.Ambient.PPass,1200)
+
+	F.ODBC.Connection!Conx.OpenLocalRecordsetRO("rstForeVerify",V.Local.sSqlForeVerify)
+	F.Intrinsic.Control.If(V.ODBC.Conx!rstForeVerify.EOF,=,True)
+		F.ODBC.Conx!rstForeVerify.Close
+		F.Intrinsic.Control.CallSub(F_end)
+	F.Intrinsic.Control.Else
+		F.ODBC.Conx!rstForeVerify.Close
+		Gui.F_Main..Show
+	F.Intrinsic.Control.EndIf
+F.Intrinsic.Control.EndIf
+
+
+
+
+Program.Sub.Main.End
+
+Program.Sub.cmdProcess.Start
+' 02/29/2016 RGRC For Geater
+'Mod 08/05/2016 RGRC for Driv-Lok
+
+V.Local.sSQLInvOrdQty.Declare(String)
+V.Local.iC.Declare(Long)
+V.Local.sSQL.Declare(String)
+V.Local.sSQL2.Declare(String)
+V.Local.sSQLForeImpLn.Declare(String)
+V.Local.sPrevPart.Declare(String)
+V.Local.sPrevLoc.Declare(String)
+V.Local.dPrevReq.Declare(Date)
+V.Local.iPrevPos.Declare(Long,-1)
+V.Local.iC2.Declare(Long,0)
+V.Local.iC3.Declare(Long,0)
+V.Local.sLine.Declare(String)
+V.Local.fResidue.Declare(Float)
+V.Local.fBalance.Declare(Float)
+V.Local.fTemp.Declare(Float)
+V.Local.fSSO_BO.Declare(Float)
+
+Gui.F_Main..Visible(False)
+Gui.F_Process..Visible(True)
+
+F.Intrinsic.Control.CallSub(F_delduplicates)
+
+V.Local.sSQLInvOrdQty.Set("Select distinct FIH.PART,FIH.LOC, FIH.KEY_DATE,FIH.KEY_TIME,VIM.QTY_ORDER,VIM.QTY_ONHAND,VIM.QTY_ONORDER_PO,VIM.QTY_ONORDER_WO,VIM.QTY_REQUIRED,VIM.QTY_REORDER From FORECAST_IMPORT_HDR FIH ")
+'Mod 04/24/2020
+'F.Intrinsic.String.Build("{0} {1}",V.Local.sSQLInvOrdQty,"LEFT OUTER JOIN V_INVENTORY_MSTR VIM ON FIH.PART=VIM.PART AND FIH.LOC=VIM.LOCATION WHERE VIM.QTY_ORDER>0 order by  FIH.PART,FIH.LOC, Key_date, Key_time",V.Local.sSQLInvOrdQty)
+F.Intrinsic.String.Build("{0} {1}",V.Local.sSQLInvOrdQty,"LEFT OUTER JOIN V_INVENTORY_MSTR VIM ON FIH.PART=VIM.PART AND FIH.LOC=VIM.LOCATION order by  FIH.PART,FIH.LOC, Key_date, Key_time",V.Local.sSQLInvOrdQty)
+
+'Mod 04/24/2020
+'V.Local.sSQLForeImpLn.Set("select FIL.REQUIRED,FIL.QUANTITY, FIH.PART,FIH.LOC from FORECAST_IMPORT_LINE FIL, FORECAST_IMPORT_HDR FIH LEFT OUTER JOIN V_INVENTORY_MSTR VIM ON FIH.PART=VIM.PART AND FIH.LOC=VIM.LOCATION WHERE VIM.QTY_ORDER>0 and FIL.KEY_DATE=FIH.KEY_DATE AND FIL.KEY_TIME=FIH.KEY_TIME  order by FIH.PART,FIH.LOC, REQUIRED, KEY_SEQ")
+V.Local.sSQLForeImpLn.Set("select FIL.REQUIRED,FIL.QUANTITY, FIH.PART,FIH.LOC from FORECAST_IMPORT_LINE FIL, FORECAST_IMPORT_HDR FIH LEFT OUTER JOIN V_INVENTORY_MSTR VIM ON FIH.PART=VIM.PART AND FIH.LOC=VIM.LOCATION WHERE FIL.KEY_DATE=FIH.KEY_DATE AND FIL.KEY_TIME=FIH.KEY_TIME  order by FIH.PART,FIH.LOC, REQUIRED, KEY_SEQ")
+F.Intrinsic.Control.CallSub(LoadGCG_5171_FORE_SALES)
+
+
+F.ODBC.Connection!Conx.OpenLocalRecordsetRO("rstInvOrdQty",V.Local.sSQLInvOrdQty)
+F.Intrinsic.Control.If(V.ODBC.Conx!rstInvOrdQty.EOF,=,True)
+	F.ODBC.Connection!Conx.Close
+	F.Intrinsic.Control.End
+
+F.Intrinsic.Control.EndIf
+
+F.Intrinsic.Variable.LoadUDTFromRecordset("Conx","rstInvOrdQty","uglobal.uInvOrdQty",False,100000)
+F.ODBC.Conx!rstInvOrdQty.Close
+
+F.ODBC.Connection!Conx.OpenLocalRecordsetRO("rstForeImp",V.Local.sSQLForeImpLn)
+F.Intrinsic.Control.If(V.ODBC.Conx!rstForeImp.EOF,=,True)
+	F.ODBC.Connection!Conx.Close
+	F.Intrinsic.Control.End
+
+F.Intrinsic.Control.EndIf
+
+F.Intrinsic.Variable.LoadUDTFromRecordset("Conx","rstForeImp","uglobal.uForeImpLine",False,100000)
+F.ODBC.Conx!rstForeImp.Close
+
+F.Intrinsic.Control.For(V.Local.iC,0,V.uGlobal.uInvOrdQty.UBound,1)
+	F.Intrinsic.String.Build("Delete From Forecast_Import_Line Where KEY_DATE='{0}' AND KEY_TIME='{1}'",V.uGlobal.uInvOrdQty(V.Local.iC)!KEY_DATE,V.uGlobal.uInvOrdQty(V.Local.iC)!KEY_TIME,V.Local.sSQL)
+	F.ODBC.Connection!Conx.Execute(V.Local.sSQL)
+F.Intrinsic.Control.Next(V.Local.iC)
+
+
+F.Intrinsic.Variable.UDTMultiFlagDuplicates(V.uGlobal.uInvOrdQty!PART,V.uGlobal.uInvOrdQty!LOC)
+F.Intrinsic.Variable.UDTDeleteFlagged(V.uGlobal.uInvOrdQty)
+
+V.Local.iC3.Set(0)
+F.Intrinsic.Control.For(V.Local.iC,0,V.uGlobal.uForeImpLine.UBound,1)
+	F.Intrinsic.Math.Add(V.Local.iC3,1,V.Local.iC3)
+	F.Intrinsic.Control.If(V.Local.iC3,=,999)
+		V.Local.iC3.Set(1)
+	F.Intrinsic.Control.EndIf
+	F.Intrinsic.Control.If(V.uGlobal.uForeImpLine(V.Local.iC)!PART,=,V.Local.sPrevPart)
+	F.Intrinsic.Control.AndIf(V.uGlobal.uForeImpLine(V.Local.iC)!LOC,=,V.Local.sPrevLoc)
+	F.Intrinsic.Control.AndIf(V.uGlobal.uForeImpLine(V.Local.iC)!REQUIRED,=,V.Local.dPrevReq)
+		F.Intrinsic.Math.Add(V.uGlobal.uForeImpLine(V.Local.iPrevPos)!QUANTITY,V.uGlobal.uForeImpLine(V.Local.iC)!QUANTITY,V.uGlobal.uForeImpLine(V.Local.iPrevPos)!QUANTITY)
+		F.Intrinsic.Variable.UDTFlagOrdinal(V.uGlobal.uForeImpLine,True,V.Local.iC)
+	F.Intrinsic.Control.Else
+		V.Local.sPrevPart.Set(V.uGlobal.uForeImpLine(V.Local.iC)!PART)
+		V.Local.sPrevLoc.Set(V.uGlobal.uForeImpLine(V.Local.iC)!LOC)
+		V.Local.dPrevReq.Set(V.uGlobal.uForeImpLine(V.Local.iC)!REQUIRED)
+		F.Intrinsic.Variable.UDTMultiSeek(V.uGlobal.uInvOrdQty!PART,V.uGlobal.uForeImpLine(V.Local.iC)!PART,V.uGlobal.uInvOrdQty!LOC,V.uGlobal.uForeImpLine(V.Local.iC)!LOC,V.Local.sLine)
+		F.Intrinsic.Control.If(V.Local.sLine,<>,"")
+			F.Intrinsic.String.Split(V.Local.sLine,"*!*",V.Local.sLine)
+			V.uGlobal.uForeImpLine(V.Local.iC)!KEY_DATE.Set(V.uGlobal.uInvOrdQty(V.Local.sLine(0))!KEY_DATE)
+			V.uGlobal.uForeImpLine(V.Local.iC)!KEY_TIME.Set(V.uGlobal.uInvOrdQty(V.Local.sLine(0))!KEY_TIME)
+		F.Intrinsic.Control.EndIf
+
+		V.Local.iPrevPos.Set(V.Local.iC)
+	F.Intrinsic.Control.EndIf
+F.Intrinsic.Control.Next(V.Local.iC)
+F.Intrinsic.Variable.UDTDeleteFlagged(V.uGlobal.uForeImpLine)
+
+F.Intrinsic.Variable.UDTUnFlagAll(V.uGlobal.uForeImpLine)
+
+F.Intrinsic.Control.For(V.Local.iC,0,V.uGlobal.uInvOrdQty.UBound,1)
+	V.Local.iC3.Set(0)
+	F.Intrinsic.Math.Add(V.uGlobal.uInvOrdQty(V.Local.iC)!QTY_ONHAND,V.uGlobal.uInvOrdQty(V.Local.iC)!QTY_ONORDER_PO,V.uGlobal.uInvOrdQty(V.Local.iC)!QTY_ONORDER_WO,V.Local.fBalance)
+	F.Intrinsic.Math.Sub(V.Local.fBalance,V.uGlobal.uInvOrdQty(V.Local.iC)!QTY_REQUIRED,V.uGlobal.uInvOrdQty(V.Local.iC)!QTY_REORDER,V.Local.fBalance)
+	
+	'Section added 4/16/2020 -remove Qty not scheduled from the OE_SHIP_SCHED table
+	F.Intrinsic.String.Build("select SUM(QTY_OPEN) OSS_QTY_BO from V_ORDER_LINES VOL, OE_SHIP_SCHED OSS WHERE VOL.ORDER_NO=OSS.ORDER_NO AND VOL.RECORD_NO=OSS.ORDER_LINE AND OSS.DATE_DUE='99991231' AND PART='{0}' AND LOCATION='{1}' GROUP BY VOL.PART, VOL.LOCATION",V.uGlobal.uInvOrdQty(V.Local.iC)!PART,V.uGlobal.uInvOrdQty(V.Local.iC)!LOC,V.Local.sSQL)
+	F.ODBC.Connection!Conx.OpenLocalRecordsetRO("rstOSS",V.Local.sSQL)
+
+	F.Intrinsic.Control.If(V.ODBC.Conx!rstOSS.EOF,=,True)
+		V.Local.fSSO_BO.Set(0)
+	F.Intrinsic.Control.Else
+		V.Local.fSSO_BO.Set(V.ODBC.Conx!rstOSS.FieldVal!OSS_QTY_BO)
+	F.Intrinsic.Control.EndIf
+	F.ODBC.Conx!rstOSS.Close
+	F.Intrinsic.Math.Add(V.Local.fBalance,V.Local.fSSO_BO,V.Local.fBalance)
+	
+	F.Intrinsic.Variable.UDTMultiSeek(V.uGlobal.uForeImpLine!KEY_DATE,V.uGlobal.uInvOrdQty(V.Local.iC)!KEY_DATE,V.uGlobal.uForeImpLine!KEY_TIME,V.uGlobal.uInvOrdQty(V.Local.iC)!KEY_TIME,V.Local.sLine)
+	F.Intrinsic.Control.If(V.Local.sLine,<>,"")
+		F.Intrinsic.String.Split(V.Local.sLine,"*!*",V.Local.sLine)
+		F.Intrinsic.Control.For(V.Local.iC2,0,V.Local.sLine.UBound,1)
+			F.Intrinsic.Math.Sub(V.Local.fBalance,V.uGlobal.uForeImpLine(V.Local.sLine(V.Local.iC2))!QUANTITY,V.Local.fResidue)
+			F.Intrinsic.Control.If(V.Local.fResidue,>=,0)
+				F.Intrinsic.Variable.UDTFlagOrdinal(V.uGlobal.uForeImpLine,True,V.Local.sLine(V.Local.iC2))
+				V.Local.fBalance.Set(V.Local.fResidue)
+			F.Intrinsic.Control.Else
+				F.Intrinsic.Math.Add(V.Local.iC3,1,V.Local.iC3)
+				'mod 4/24/2020
+				F.Intrinsic.Control.If(V.uGlobal.uInvOrdQty(V.Local.iC)!QTY_ORDER,=,0)
+					F.Intrinsic.Math.Int(V.Local.fResidue,V.Local.fTemp)
+					F.Intrinsic.Math.Abs(V.Local.fTemp,V.Local.fTemp)
+				F.Intrinsic.Control.Else
+					F.Intrinsic.Math.Div(V.Local.fResidue,V.uGlobal.uInvOrdQty(V.Local.iC)!QTY_ORDER,V.Local.fTemp)
+					F.Intrinsic.Math.Int(V.Local.fTemp,V.Local.fTemp)
+					F.Intrinsic.Math.Abs(V.Local.fTemp,V.Local.fTemp)
+					F.Intrinsic.Math.Mult(V.Local.fTemp,V.uGlobal.uInvOrdQty(V.Local.iC)!QTY_ORDER,V.Local.fTemp)
+				F.Intrinsic.Control.EndIf
+				V.uGlobal.uForeImpLine(V.Local.sLine(V.Local.iC2))!QUANTITY.Set(V.Local.fTemp)
+				F.Intrinsic.Math.Add(V.Local.fTemp,V.Local.fResidue,V.Local.fBalance)
+				V.uGlobal.uForeImpLine(V.Local.sLine(V.Local.iC2))!KEY_SEQ.Set(V.Local.iC3)
+			F.Intrinsic.Control.EndIf
+		F.Intrinsic.Control.Next(V.Local.iC2)
+	F.Intrinsic.Control.EndIf
+F.Intrinsic.Control.Next(V.Local.iC)
+
+F.Intrinsic.Variable.UDTDeleteFlagged(V.uGlobal.uForeImpLine)
+
+V.Local.sSQLInvOrdQty.Set("select * from FORECAST_IMPORT_HDR")
+F.ODBC.Connection!Conx.OpenLocalRecordsetRW("rstForeHdrDel",V.Local.sSQLInvOrdQty)
+F.Intrinsic.Control.DoUntil(V.ODBC.Conx!rstForeHdrDel.EOF,=,True)
+	F.Intrinsic.Variable.UDTMultiSeek(V.uGlobal.uInvOrdQty!KEY_DATE,V.ODBC.Conx!rstForeHdrDel.FieldVal!KEY_DATE,V.uGlobal.uInvOrdQty!KEY_TIME,V.ODBC.Conx!rstForeHdrDel.FieldVal!KEY_TIME,V.Local.sLine)
+	F.Intrinsic.Control.If(V.Local.sLine,=,"")
+		F.ODBC.Conx!rstForeHdrDel.Delete
+		F.ODBC.Conx!rstForeHdrDel.Update
+	F.Intrinsic.Control.EndIf
+	F.ODBC.Conx!rstForeHdrDel.MoveNext
+F.Intrinsic.Control.Loop
+F.ODBC.Conx!rstForeHdrDel.Close
+
+F.ODBC.Connection!Conx.OpenLocalRecordsetRW("rstForeLnImp","Select * from Forecast_Import_Line")
+F.Intrinsic.Control.For(V.Local.iC,0,V.uGlobal.uForeImpLine.UBound,1)
+	F.ODBC.Conx!rstForeLnImp.AddNew
+	F.ODBC.Conx!rstForeLnImp.Set!KEY_DATE(V.uGlobal.uForeImpLine(V.Local.iC)!KEY_DATE)
+	F.ODBC.Conx!rstForeLnImp.Set!KEY_TIME(V.uGlobal.uForeImpLine(V.Local.iC)!KEY_TIME)
+	F.ODBC.Conx!rstForeLnImp.Set!KEY_SEQ(V.uGlobal.uForeImpLine(V.Local.iC)!KEY_SEQ)
+	F.ODBC.Conx!rstForeLnImp.Set!REQUIRED(V.uGlobal.uForeImpLine(V.Local.iC)!REQUIRED)
+	F.ODBC.Conx!rstForeLnImp.Set!QUANTITY(V.uGlobal.uForeImpLine(V.Local.iC)!QUANTITY)
+	F.ODBC.Conx!rstForeLnImp.Set!TYPE("1")
+	F.ODBC.Conx!rstForeLnImp.Set!FILLER("00")
+	F.ODBC.Conx!rstForeLnImp.Update
+F.Intrinsic.Control.Next(V.Local.iC)
+F.ODBC.Conx!rstForeLnImp.Close
+
+F.Intrinsic.File.String2File(V.Global.sFile," ")
+
+F.Intrinsic.Control.End
+
+Program.Sub.cmdProcess.End
+
+Program.Sub.F_End.Start
+'Close the Connection
+F.ODBC.Connection!Conx.Close
+F.Intrinsic.Control.End
+
+Program.Sub.F_End.End
+
+Program.Sub.F_DelDuplicates.Start
+' Mod RRC 10/04/16
+
+V.Local.sSql.Declare(String)
+V.Local.sKeyDate.Declare(String,"XX")
+V.Local.sKeyTime.Declare(String,"")
+V.Local.sCustomer.Declare(String,"XX")
+V.Local.sShipTo.Declare(String,"XX")
+V.Local.sPart.Declare(String,"")
+V.Local.sLoc.Declare(String,"XX")
+V.Local.dRequired.Declare(Date)
+V.Local.fQuantity.Declare(Float,0)
+V.Local.fKeySeq.Declare(Float,0)
+V.Local.sKeyDate2.Declare(String,"0")
+V.Local.sKeyTime2.Declare(String,"0")
+V.Local.sCustomer2.Declare(String,"")
+V.Local.sShipTo2.Declare(String,"")
+V.Local.sPart2.Declare(String,"")
+V.Local.sLoc2.Declare(String,"")
+V.Local.dRequired2.Declare(Date)
+V.Local.fQuantity2.Declare(Float,0)
+V.Local.fKeySeq2.Declare(Float,0)
+V.Local.iFlag.Declare(Long)
+V.Local.sTest.Declare(String)
+
+V.Local.sSql.Set("Select FHD.KEY_DATE, FHD.KEY_TIME, FHD.CUSTOMER, FHD.SHIPTO, PART, LOC, REQUIRED, FLN.QUANTITY FROM FORECAST_IMPORT_HDR FHD, FORECAST_IMPORT_LINE FLN WHERE FHD.KEY_DATE=FLN.KEY_DATE AND FHD.KEY_TIME=FLN.KEY_TIME Order by FHD.CUSTOMER, FHD.SHIPTO, FHD.KEY_DATE, PART, LOC, REQUIRED, FLN.QUANTITY, FHD.KEY_TIME DESC;")
+
+F.ODBC.Connection!Conx.OpenLocalRecordsetRO("rstChkDuplFC",V.Local.sSQL)
+F.Intrinsic.Control.DoUntil(V.ODBC.Conx!rstChkDuplFC.EOF,=,True)
+	V.Local.dRequired2.Set(V.ODBC.Conx!rstChkDuplFC.FieldVal!REQUIRED)
+	F.Intrinsic.Control.If(V.Local.sKeyDate,=,V.ODBC.Conx!rstChkDuplFC.FieldValTrim!KEY_DATE)
+	F.Intrinsic.Control.AndIf(V.Local.sCustomer,=,V.ODBC.Conx!rstChkDuplFC.FieldValTrim!CUSTOMER)
+	F.Intrinsic.Control.AndIf(V.Local.sShipTo,=,V.ODBC.Conx!rstChkDuplFC.FieldValTrim!SHIPTO)
+	F.Intrinsic.Control.AndIf(V.Local.sPart,=,V.ODBC.Conx!rstChkDuplFC.FieldValTrim!PART)
+	F.Intrinsic.Control.AndIf(V.Local.sLoc,=,V.ODBC.Conx!rstChkDuplFC.FieldValTrim!LOC)
+	F.Intrinsic.Control.AndIf(V.Local.dRequired,=,V.Local.dRequired2)
+	F.Intrinsic.Control.AndIf(V.Local.fQuantity,=,V.ODBC.Conx!rstChkDuplFC.FieldVal!QUANTITY)
+		F.Intrinsic.Control.If(V.Local.iFlag,=,0)
+			F.Intrinsic.String.Build("Delete FORECAST_IMPORT_HDR Where KEY_DATE='{0}' AND KEY_TIME='{1}';",V.ODBC.Conx!rstChkDuplFC.FieldValTrim!KEY_DATE,V.ODBC.Conx!rstChkDuplFC.FieldValTrim!KEY_TIME,V.Local.sSql)
+			F.ODBC.Connection!Conx.Execute(V.Local.sSql)
+			F.Intrinsic.String.Build("Delete FORECAST_IMPORT_LINE Where KEY_DATE='{0}' AND KEY_TIME='{1}';",V.ODBC.Conx!rstChkDuplFC.FieldValTrim!KEY_DATE,V.ODBC.Conx!rstChkDuplFC.FieldValTrim!KEY_TIME,V.Local.sSql)
+			F.ODBC.Connection!Conx.Execute(V.Local.sSql)
+			V.Local.iFlag.Set(1)
+			'' Delete records
+		F.Intrinsic.Control.EndIf
+	F.Intrinsic.Control.Else
+		V.Local.sKeyDate.Set(V.ODBC.Conx!rstChkDuplFC.FieldValTrim!KEY_DATE)
+		V.Local.sKeyTime.Set(V.ODBC.Conx!rstChkDuplFC.FieldValTrim!KEY_TIME)
+		V.Local.sCustomer.Set(V.ODBC.Conx!rstChkDuplFC.FieldValTrim!CUSTOMER)
+		V.Local.sShipTo.Set(V.ODBC.Conx!rstChkDuplFC.FieldValTrim!SHIPTO)
+		V.Local.sPart.Set(V.ODBC.Conx!rstChkDuplFC.FieldValTrim!PART)
+		V.Local.sLoc.Set(V.ODBC.Conx!rstChkDuplFC.FieldValTrim!LOC)
+		V.Local.dRequired.Set(V.ODBC.Conx!rstChkDuplFC.FieldVal!REQUIRED)
+		V.Local.fQuantity.Set(V.ODBC.Conx!rstChkDuplFC.FieldVal!QUANTITY)
+		V.Local.iFlag.Set(0)
+
+''F.Intrinsic.Control.If(V.Local.sKeyTime,=,"11481130")
+'	F.Intrinsic.String.Build("{0}!{1}!{2}!{3}!{4}!{5}!{6}",V.Local.sKeyDate,V.Local.sKeyTime,V.Local.sCustomer,V.Local.sShipTo,V.Local.sPart,V.Local.dRequired,V.Local.fQuantity,V.Local.sTest)
+'	F.Intrinsic.UI.Msgbox(V.Local.sTest)
+''F.Intrinsic.Control.EndIf
+'
+''F.Intrinsic.Control.If(V.Local.sKeyTime,=,"07500833")
+'	F.Intrinsic.String.Build("{0}!{1}!{2}!{3}!{4}!{5}!{6}",V.Local.sKeyDate,V.Local.sKeyTime,V.Local.sCustomer,V.Local.sShipTo,V.Local.sPart,V.Local.dRequired,V.Local.fQuantity,V.Local.sTest)
+'	F.Intrinsic.UI.Msgbox(V.Local.sTest)
+''F.Intrinsic.Control.EndIf
+
+		F.Intrinsic.Control.EndIf
+	F.ODBC.Conx!rstChkDuplFC.MoveNext
+F.Intrinsic.Control.Loop
+
+F.ODBC.Conx!rstChkDuplFC.Close
+
+
+Program.Sub.F_DelDuplicates.End
+
+Program.Sub.LoadGCG_5171_FORE_SALES.Start
+
+V.Local.sSQL.Declare
+V.Local.sSQL2.Declare
+
+'Clean and Fill GCG_5171_FORE_SALES table
+V.Local.sSQL.Set("Delete From GCG_5171_FORE_SALES")
+F.ODBC.Connection!Conx.Execute(V.Local.sSQL)
+
+V.Local.sSQL.Set("Select PART, LOC, REQUIRED, FORECAST_IMPORT_LINE.QUANTITY, CUSTOMER, SHIPTO FROM FORECAST_IMPORT_HDR, FORECAST_IMPORT_LINE WHERE FORECAST_IMPORT_HDR.KEY_DATE=FORECAST_IMPORT_LINE.KEY_DATE AND FORECAST_IMPORT_HDR.KEY_TIME=FORECAST_IMPORT_LINE.KEY_TIME")
+V.Local.sSQL2.Set("Select * from GCG_5171_FORE_SALES")
+F.ODBC.Connection!Conx.OpenLocalRecordsetRO("rstLoadFC",V.Local.sSQL)
+F.ODBC.Connection!Conx.OpenLocalRecordsetRW("rstSaveGCG",V.Local.sSQL2)
+F.Intrinsic.Control.DoUntil(V.ODBC.Conx!rstLoadFC.EOF,=,True)
+	F.ODBC.Conx!rstSaveGCG.AddNew
+	F.ODBC.Conx!rstSaveGCG.Set!PART(V.ODBC.Conx!rstLoadFC.FieldValTrim!PART)
+	F.ODBC.Conx!rstSaveGCG.Set!LOC(V.ODBC.Conx!rstLoadFC.FieldValTrim!LOC)
+	F.ODBC.Conx!rstSaveGCG.Set!REQUIRED(V.ODBC.Conx!rstLoadFC.FieldValTrim!REQUIRED)
+	F.ODBC.Conx!rstSaveGCG.Set!QUANTITY(V.ODBC.Conx!rstLoadFC.FieldValTrim!QUANTITY)
+	F.ODBC.Conx!rstSaveGCG.Set!CUSTOMER(V.ODBC.Conx!rstLoadFC.FieldValTrim!CUSTOMER)
+	F.ODBC.Conx!rstSaveGCG.Set!SHIPTO(V.ODBC.Conx!rstLoadFC.FieldValTrim!SHIPTO)
+	F.ODBC.Conx!rstSaveGCG.Update
+	F.ODBC.Conx!rstLoadFC.MoveNext
+F.Intrinsic.Control.Loop
+F.ODBC.Conx!rstSaveGCG.Close
+F.ODBC.Conx!rstLoadFC.Close
+
+Program.Sub.LoadGCG_5171_FORE_SALES.End
+
+Program.Sub.Comments.Start
+${$0$}$GAB_CP_ForeLdBegMonth$}$RR$}$4/8/2014$}$False
+${$3$}$0$}$$}$0$}$-1$}$$}$12:00:00 AM$}$Fore at the beg of the month (group records)
+Program.Sub.Comments.End
