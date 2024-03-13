@@ -1,0 +1,310 @@
+﻿Program.Sub.ScreenSU.Start
+Gui.frmSalesFor..create
+Gui.frmSalesFor..caption("Sales Forecast")
+Gui.frmSalesFor..size(9585,7890)
+Gui.frmSalesFor..minx(0)
+Gui.frmSalesFor..miny(0)
+Gui.frmSalesFor..position(0,0)
+Gui.frmSalesFor..event(UnLoad,frmSalesFor_Unload)
+Gui.frmSalesFor..forecolor(0)
+Gui.frmSalesFor..BackColor(-2147483633)
+Gui.frmSalesFor..maxbutton(False)
+Gui.frmSalesFor..minbutton(False)
+Gui.frmSalesFor..mousepointer(0)
+Gui.frmSalesFor..Sizeable(False)
+Gui.frmSalesFor.lblPart.create(label,"Part:",True,1395,255,0,45,105,True,0,Arial,8,-2147483633,0)
+Gui.frmSalesFor.lblPart.defaultvalue("")
+Gui.frmSalesFor.txtPart.create(textbox,"",True,2190,300,0,30,360,False,0,Arial,8,-2147483643,1)
+Gui.frmSalesFor.txtPart.defaultvalue("")
+Gui.frmSalesFor.lblLoc.create(label,"Loc:",True,525,255,0,2325,105,True,0,Arial,8,-2147483633,0)
+Gui.frmSalesFor.lblLoc.defaultvalue("")
+Gui.frmSalesFor.txtLoc.create(textbox,"",True,495,300,0,2295,360,False,0,Arial,8,-2147483643,1)
+Gui.frmSalesFor.txtLoc.defaultvalue("")
+Gui.frmSalesFor.GsGCForecast.Create(GsGridControl)
+Gui.frmSalesFor.GsGCForecast.Size(9405,6855)
+Gui.frmSalesFor.GsGCForecast.Position(30,735)
+Gui.frmSalesFor.GsGCForecast.Anchor(15)
+Gui.frmSalesFor.cmdExport.Create(Button)
+Gui.frmSalesFor.cmdExport.Size(855,375)
+Gui.frmSalesFor.cmdExport.Position(8580,285)
+Gui.frmSalesFor.cmdExport.Caption("Export")
+Gui.frmSalesFor.cmdExport.Event(Click,cmdExport_Click)
+Program.Sub.ScreenSU.End
+
+Program.Sub.Preflight.Start
+Program.Sub.Preflight.End
+
+Program.Sub.Main.Start
+	F.Intrinsic.Control.Try
+	V.Local.sError.Declare
+
+	V.Local.sPart.Declare
+	V.Local.sLoc.Declare
+	V.Local.sSQL.Declare
+	V.Local.sIcon.Declare
+	V.Global.fQtyOnHand.Declare(Float)
+	
+	' 072320 RRC (QTY_ORDER changed to QTY_CUSTOMER in main Query)
+	F.Intrinsic.Control.SelectCase(V.Caller.Hook)
+		F.Intrinsic.Control.Case(14045)
+			V.Passed.000253.Set("Sales For")
+			
+		F.Intrinsic.Control.Case(14090)
+			'Set Icon
+			F.Intrinsic.String.Build("{0}\gss2.ico",V.Caller.ArtDir,V.Local.sIcon)
+			Gui.frmSalesFor..Icon(V.Local.sIcon)
+			'Open Connection
+			F.ODBC.Connection!con.OpenCompanyConnection(300)
+			F.Intrinsic.String.GSSPartString(V.Passed.000003,V.Passed.000099,V.Local.sPart)
+			V.Local.sLoc.Set(V.Passed.000004)
+			F.Intrinsic.String.Build("Select QTY_ONHAND FROM INVENTORY_MSTR WHERE PART='{0}' and LOCATION='{1}'",V.Local.sPart,V.Local.sLoc,V.Local.sSQL)
+			F.ODBC.Connection!Con.OpenLocalRecordsetRO("rstInvOH",V.Local.sSQL)
+			F.Intrinsic.Control.If(V.ODBC.Con!rstInvOH.EOF,=,False)
+				V.Global.fQtyOnHand.Set(V.ODBC.con!rstInvOH.FieldVal!QTY_ONHAND)
+			F.Intrinsic.Control.EndIf
+			F.ODBC.Con!rstInvOH.Close
+			
+			'F.Intrinsic.String.Build("SELECT 'SALES' AS TYPE, CUSTOMER AS CUSTOMER, SHIPTO AS SHIPTO, REQUIRED AS DATE_REQUIRED, QUANTITY AS QUANTITY FROM GCG_5171_FORE_SALES WHERE PART = '{0}' AND LOC = '{1}' UNION SELECT CASE WHEN SUFFIX <> '' THEN JOB+'-'+SUFFIX ELSE JOB END AS TYPE, CUSTOMER AS CUSTOMER, SHIPTO_ID AS SHIPTO, DATE_DUE AS DATE_REQUIRED, QTY_ORDER AS QUANTITY FROM V_FORECAST_HEADER WHERE PART = '{0}' AND LOCATION = '{1}' ORDER BY DATE_REQUIRED;",V.Local.sPart,V.Local.sLoc,V.Local.sSQL)
+			'F.Intrinsic.String.Build("SELECT 'SALES FORECAST' AS TYPE, '' AS TYPE2, CUSTOMER AS CUSTOMER, SHIPTO AS SHIPTO, REQUIRED AS DATE_REQUIRED, QUANTITY AS QUANTITY FROM GCG_5171_FORE_SALES WHERE PART = '{0}' AND LOC = '{1}' UNION SELECT 'FORECAST' AS TYPE, CASE WHEN SUFFIX <> '' THEN JOB+'-'+SUFFIX ELSE JOB END AS TYPE2, CUSTOMER AS CUSTOMER, SHIPTO_ID AS SHIPTO, DATE_DUE AS DATE_REQUIRED, QTY_ORDER AS QUANTITY FROM V_FORECAST_HEADER WHERE PART = '{0}' AND LOCATION = '{1}' UNION SELECT 'SALES ORDER' AS TYPE, ORDER_NO+' '+LEFT(RECORD_NO,3) AS TYPE2, CUSTOMER AS CUSTOMER, SHIP_ID AS SHIPTO, DATE_ITEM_PROM AS DATE_REQUIRED, QTY_BO AS QUANTITY FROM V_ORDER_LINES WHERE PART = '{0}' AND LOCATION = '{1}' UNION SELECT 'WORK ORDER' AS TYPE, CASE WHEN SUFFIX <> '' THEN JOB+'-'+SUFFIX ELSE JOB END AS TYPE2, CUSTOMER AS CUSTOMER, SHIPTO_ID AS SHIPTO, DATE_DUE AS DATE_REQUIRED, QTY_ORDER-QTY_COMPLETED AS QUANTITY FROM V_JOB_HEADER WHERE PART = '{0}' AND LOCATION = '{1}'and Date_Closed = '1900-1-1' ORDER BY DATE_REQUIRED;",V.Local.sPart,V.Local.sLoc,V.Local.sSQL)
+			' Change 072320 F.Intrinsic.String.Build("SELECT 'SALES FORECAST' AS TYPE, '' AS TYPE2, CUSTOMER AS CUSTOMER, SHIPTO AS SHIPTO, REQUIRED AS DATE_REQUIRED, QUANTITY AS QUANTITY FROM GCG_5171_FORE_SALES WHERE PART = '{0}' AND LOC = '{1}' UNION SELECT 'FORECAST' AS TYPE, CASE WHEN SUFFIX <> '' THEN JOB+'-'+SUFFIX ELSE JOB END AS TYPE2, CUSTOMER AS CUSTOMER, SHIPTO_ID AS SHIPTO, DATE_DUE AS DATE_REQUIRED, QTY_ORDER AS QUANTITY FROM V_FORECAST_HEADER WHERE PART = '{0}' AND LOCATION = '{1}' UNION SELECT 'SALES ORDER' AS TYPE, ORDER_NO+' '+LEFT(RECORD_NO,3) AS TYPE2, CUSTOMER AS CUSTOMER, SHIP_ID AS SHIPTO, DATE_ITEM_PROM AS DATE_REQUIRED, QTY_BO AS QUANTITY FROM V_ORDER_LINES WHERE PART = '{0}' AND LOCATION = '{1}' AND FLAG_USE_MQD<>'Y' UNION SELECT 'WORK ORDER' AS TYPE, CASE WHEN SUFFIX <> '' THEN JOB+'-'+SUFFIX ELSE JOB END AS TYPE2, CUSTOMER AS CUSTOMER, SHIPTO_ID AS SHIPTO, DATE_DUE AS DATE_REQUIRED, QTY_ORDER-QTY_COMPLETED AS QUANTITY FROM V_JOB_HEADER WHERE PART = '{0}' AND LOCATION = '{1}'and Date_Closed = '1900-1-1' UNION SELECT 'SALES ORDER' AS TYPE, VOL.ORDER_NO+' '+LEFT(VOL.RECORD_NO,3) AS TYPE2, VOL.CUSTOMER AS CUSTOMER, VOL.SHIP_ID AS SHIPTO, VOSS.DATE_DUE AS DATE_REQUIRED, VOSS.QTY_OPEN AS QUANTITY FROM V_ORDER_LINES VOL LEFT OUTER JOIN V_OE_SHIP_SCHED VOSS ON VOL.ORDER_NO=VOSS.ORDER_NO AND VOL.RECORD_NO=VOSS.ORDER_LINE WHERE VOL.PART = '{0}' AND VOL.LOCATION = '{1}' AND VOL.FLAG_USE_MQD='Y' AND VOSS.QTY_OPEN <> 0 AND VOSS.DATE_DUE <>'1900-1-1' ORDER BY DATE_REQUIRED;",V.Local.sPart,V.Local.sLoc,V.Local.sSQL)
+			F.Intrinsic.String.Build("SELECT 'SALES FORECAST' AS TYPE, '' AS TYPE2, CUSTOMER AS CUSTOMER, SHIPTO AS SHIPTO, REQUIRED AS DATE_REQUIRED, QUANTITY AS QUANTITY FROM GCG_5171_FORE_SALES WHERE PART = '{0}' AND LOC = '{1}' UNION SELECT 'FORECAST' AS TYPE, CASE WHEN SUFFIX <> '' THEN JOB+'-'+SUFFIX ELSE JOB END AS TYPE2, CUSTOMER AS CUSTOMER, SHIPTO_ID AS SHIPTO, DATE_DUE AS DATE_REQUIRED, QTY_ORDER AS QUANTITY FROM V_FORECAST_HEADER WHERE PART = '{0}' AND LOCATION = '{1}' UNION SELECT 'SALES ORDER' AS TYPE, ORDER_NO+' '+LEFT(RECORD_NO,3) AS TYPE2, CUSTOMER AS CUSTOMER, SHIP_ID AS SHIPTO, DATE_ITEM_PROM AS DATE_REQUIRED, QTY_BO AS QUANTITY FROM V_ORDER_LINES WHERE PART = '{0}' AND LOCATION = '{1}' AND FLAG_USE_MQD<>'Y' UNION SELECT 'WORK ORDER' AS TYPE, CASE WHEN SUFFIX <> '' THEN JOB+'-'+SUFFIX ELSE JOB END AS TYPE2, CUSTOMER AS CUSTOMER, SHIPTO_ID AS SHIPTO, DATE_DUE AS DATE_REQUIRED, QTY_CUSTOMER-QTY_COMPLETED AS QUANTITY FROM V_JOB_HEADER WHERE PART = '{0}' AND LOCATION = '{1}'and Date_Closed = '1900-1-1' UNION SELECT 'SALES ORDER' AS TYPE, VOL.ORDER_NO+' '+LEFT(VOL.RECORD_NO,3) AS TYPE2, VOL.CUSTOMER AS CUSTOMER, VOL.SHIP_ID AS SHIPTO, VOSS.DATE_DUE AS DATE_REQUIRED, VOSS.QTY_OPEN AS QUANTITY FROM V_ORDER_LINES VOL LEFT OUTER JOIN V_OE_SHIP_SCHED VOSS ON VOL.ORDER_NO=VOSS.ORDER_NO AND VOL.RECORD_NO=VOSS.ORDER_LINE WHERE VOL.PART = '{0}' AND VOL.LOCATION = '{1}' AND VOL.FLAG_USE_MQD='Y' AND VOSS.QTY_OPEN <> 0 AND VOSS.DATE_DUE <>'1900-1-1' ORDER BY DATE_REQUIRED;",V.Local.sPart,V.Local.sLoc,V.Local.sSQL)
+			F.Data.DataTable.CreateFromSQL("dtSalesFor","con",V.Local.sSQL,True)
+			F.Intrinsic.Control.If(V.DataTable.dtSalesFor.RowCount,>,0)
+				Gui.frmSalesFor.txtPart.Text(V.Local.sPart)
+				Gui.frmSalesFor.txtLoc.Text(V.Local.sLoc)
+				F.Intrinsic.Control.CallSub(CalculateNet)
+				F.Intrinsic.Control.CallSub(LoadSalesForGV)
+				Gui.frmSalesFor..Show
+			F.Intrinsic.Control.EndIf
+			F.ODBC.Connection!con.Close
+
+
+		F.Intrinsic.Control.Case(52000)
+			V.Local.sScriptLabel.Declare
+			V.Local.iRowCount.Declare
+			V.Local.sRowData.Declare
+			V.Local.iRow.Declare
+		
+			
+			F.Intrinsic.BDF.Load("SupplyAndDemand-AccordionControlNavigation-bdf","SupplyAndDemand-AccordionControlNavigation-bdf")
+			F.Intrinsic.BDF.Clone("SupplyAndDemand-AccordionControlNavigation-bdf","Clone")
+			F.Intrinsic.BDF.ReadRowCount("SupplyAndDemand-AccordionControlNavigation-bdf",V.Local.iRowCount)
+			F.Intrinsic.Math.Sub(V.Local.iRowCount,1,V.Local.iRowCount)
+			F.Intrinsic.Control.For(V.Local.iRow,0,V.Local.iRowCount,1)
+				F.Intrinsic.BDF.ReadRow("SupplyAndDemand-AccordionControlNavigation-bdf",V.Local.iRow,V.Local.sRowData)
+				F.Intrinsic.String.Replace(V.Local.sRowData,"Script 3","Sales For",V.Local.sRowData)
+			
+				F.Intrinsic.BDF.WriteRow("Clone",V.Local.sRowData)
+			F.Intrinsic.Control.Next(V.Local.iRow)
+			F.Intrinsic.BDF.Save("Clone","SupplyAndDemand-AccordionControlNavigation-bdf")	
+		
+		F.Intrinsic.Control.Case(52052)
+			'Set Icon
+			F.Intrinsic.String.Build("{0}\gss2.ico",V.Caller.ArtDir,V.Local.sIcon)
+			Gui.frmSalesFor..Icon(V.Local.sIcon)
+			'Open Connection
+			F.ODBC.Connection!con.OpenCompanyConnection(300)
+			F.Intrinsic.String.GSSPartString(V.Passed.PartNumber,V.Passed.PartNumberRevision,V.Local.sPart)
+			V.Local.sLoc.Set(V.Passed.LocationCode)
+			F.Intrinsic.String.Build("Select QTY_ONHAND FROM INVENTORY_MSTR WHERE PART='{0}' and LOCATION='{1}'",V.Local.sPart,V.Local.sLoc,V.Local.sSQL)
+			F.ODBC.Connection!Con.OpenLocalRecordsetRO("rstInvOH",V.Local.sSQL)
+			F.Intrinsic.Control.If(V.ODBC.Con!rstInvOH.EOF,=,False)
+				V.Global.fQtyOnHand.Set(V.ODBC.con!rstInvOH.FieldVal!QTY_ONHAND)
+			F.Intrinsic.Control.EndIf
+			F.ODBC.Con!rstInvOH.Close
+			
+			'F.Intrinsic.String.Build("SELECT 'SALES' AS TYPE, CUSTOMER AS CUSTOMER, SHIPTO AS SHIPTO, REQUIRED AS DATE_REQUIRED, QUANTITY AS QUANTITY FROM GCG_5171_FORE_SALES WHERE PART = '{0}' AND LOC = '{1}' UNION SELECT CASE WHEN SUFFIX <> '' THEN JOB+'-'+SUFFIX ELSE JOB END AS TYPE, CUSTOMER AS CUSTOMER, SHIPTO_ID AS SHIPTO, DATE_DUE AS DATE_REQUIRED, QTY_ORDER AS QUANTITY FROM V_FORECAST_HEADER WHERE PART = '{0}' AND LOCATION = '{1}' ORDER BY DATE_REQUIRED;",V.Local.sPart,V.Local.sLoc,V.Local.sSQL)
+			'F.Intrinsic.String.Build("SELECT 'SALES FORECAST' AS TYPE, '' AS TYPE2, CUSTOMER AS CUSTOMER, SHIPTO AS SHIPTO, REQUIRED AS DATE_REQUIRED, QUANTITY AS QUANTITY FROM GCG_5171_FORE_SALES WHERE PART = '{0}' AND LOC = '{1}' UNION SELECT 'FORECAST' AS TYPE, CASE WHEN SUFFIX <> '' THEN JOB+'-'+SUFFIX ELSE JOB END AS TYPE2, CUSTOMER AS CUSTOMER, SHIPTO_ID AS SHIPTO, DATE_DUE AS DATE_REQUIRED, QTY_ORDER AS QUANTITY FROM V_FORECAST_HEADER WHERE PART = '{0}' AND LOCATION = '{1}' UNION SELECT 'SALES ORDER' AS TYPE, ORDER_NO+' '+LEFT(RECORD_NO,3) AS TYPE2, CUSTOMER AS CUSTOMER, SHIP_ID AS SHIPTO, DATE_ITEM_PROM AS DATE_REQUIRED, QTY_BO AS QUANTITY FROM V_ORDER_LINES WHERE PART = '{0}' AND LOCATION = '{1}' UNION SELECT 'WORK ORDER' AS TYPE, CASE WHEN SUFFIX <> '' THEN JOB+'-'+SUFFIX ELSE JOB END AS TYPE2, CUSTOMER AS CUSTOMER, SHIPTO_ID AS SHIPTO, DATE_DUE AS DATE_REQUIRED, QTY_ORDER-QTY_COMPLETED AS QUANTITY FROM V_JOB_HEADER WHERE PART = '{0}' AND LOCATION = '{1}'and Date_Closed = '1900-1-1' ORDER BY DATE_REQUIRED;",V.Local.sPart,V.Local.sLoc,V.Local.sSQL)
+			' Change 072320 F.Intrinsic.String.Build("SELECT 'SALES FORECAST' AS TYPE, '' AS TYPE2, CUSTOMER AS CUSTOMER, SHIPTO AS SHIPTO, REQUIRED AS DATE_REQUIRED, QUANTITY AS QUANTITY FROM GCG_5171_FORE_SALES WHERE PART = '{0}' AND LOC = '{1}' UNION SELECT 'FORECAST' AS TYPE, CASE WHEN SUFFIX <> '' THEN JOB+'-'+SUFFIX ELSE JOB END AS TYPE2, CUSTOMER AS CUSTOMER, SHIPTO_ID AS SHIPTO, DATE_DUE AS DATE_REQUIRED, QTY_ORDER AS QUANTITY FROM V_FORECAST_HEADER WHERE PART = '{0}' AND LOCATION = '{1}' UNION SELECT 'SALES ORDER' AS TYPE, ORDER_NO+' '+LEFT(RECORD_NO,3) AS TYPE2, CUSTOMER AS CUSTOMER, SHIP_ID AS SHIPTO, DATE_ITEM_PROM AS DATE_REQUIRED, QTY_BO AS QUANTITY FROM V_ORDER_LINES WHERE PART = '{0}' AND LOCATION = '{1}' AND FLAG_USE_MQD<>'Y' UNION SELECT 'WORK ORDER' AS TYPE, CASE WHEN SUFFIX <> '' THEN JOB+'-'+SUFFIX ELSE JOB END AS TYPE2, CUSTOMER AS CUSTOMER, SHIPTO_ID AS SHIPTO, DATE_DUE AS DATE_REQUIRED, QTY_ORDER-QTY_COMPLETED AS QUANTITY FROM V_JOB_HEADER WHERE PART = '{0}' AND LOCATION = '{1}'and Date_Closed = '1900-1-1' UNION SELECT 'SALES ORDER' AS TYPE, VOL.ORDER_NO+' '+LEFT(VOL.RECORD_NO,3) AS TYPE2, VOL.CUSTOMER AS CUSTOMER, VOL.SHIP_ID AS SHIPTO, VOSS.DATE_DUE AS DATE_REQUIRED, VOSS.QTY_OPEN AS QUANTITY FROM V_ORDER_LINES VOL LEFT OUTER JOIN V_OE_SHIP_SCHED VOSS ON VOL.ORDER_NO=VOSS.ORDER_NO AND VOL.RECORD_NO=VOSS.ORDER_LINE WHERE VOL.PART = '{0}' AND VOL.LOCATION = '{1}' AND VOL.FLAG_USE_MQD='Y' AND VOSS.QTY_OPEN <> 0 AND VOSS.DATE_DUE <>'1900-1-1' ORDER BY DATE_REQUIRED;",V.Local.sPart,V.Local.sLoc,V.Local.sSQL)
+			F.Intrinsic.String.Build("SELECT 'SALES FORECAST' AS TYPE, '' AS TYPE2, CUSTOMER AS CUSTOMER, SHIPTO AS SHIPTO, REQUIRED AS DATE_REQUIRED, QUANTITY AS QUANTITY FROM GCG_5171_FORE_SALES WHERE PART = '{0}' AND LOC = '{1}' UNION SELECT 'FORECAST' AS TYPE, CASE WHEN SUFFIX <> '' THEN JOB+'-'+SUFFIX ELSE JOB END AS TYPE2, CUSTOMER AS CUSTOMER, SHIPTO_ID AS SHIPTO, DATE_DUE AS DATE_REQUIRED, QTY_ORDER AS QUANTITY FROM V_FORECAST_HEADER WHERE PART = '{0}' AND LOCATION = '{1}' UNION SELECT 'SALES ORDER' AS TYPE, ORDER_NO+' '+LEFT(RECORD_NO,3) AS TYPE2, CUSTOMER AS CUSTOMER, SHIP_ID AS SHIPTO, DATE_ITEM_PROM AS DATE_REQUIRED, QTY_BO AS QUANTITY FROM V_ORDER_LINES WHERE PART = '{0}' AND LOCATION = '{1}' AND FLAG_USE_MQD<>'Y' UNION SELECT 'WORK ORDER' AS TYPE, CASE WHEN SUFFIX <> '' THEN JOB+'-'+SUFFIX ELSE JOB END AS TYPE2, CUSTOMER AS CUSTOMER, SHIPTO_ID AS SHIPTO, DATE_DUE AS DATE_REQUIRED, QTY_CUSTOMER-QTY_COMPLETED AS QUANTITY FROM V_JOB_HEADER WHERE PART = '{0}' AND LOCATION = '{1}'and Date_Closed = '1900-1-1' UNION SELECT 'SALES ORDER' AS TYPE, VOL.ORDER_NO+' '+LEFT(VOL.RECORD_NO,3) AS TYPE2, VOL.CUSTOMER AS CUSTOMER, VOL.SHIP_ID AS SHIPTO, VOSS.DATE_DUE AS DATE_REQUIRED, VOSS.QTY_OPEN AS QUANTITY FROM V_ORDER_LINES VOL LEFT OUTER JOIN V_OE_SHIP_SCHED VOSS ON VOL.ORDER_NO=VOSS.ORDER_NO AND VOL.RECORD_NO=VOSS.ORDER_LINE WHERE VOL.PART = '{0}' AND VOL.LOCATION = '{1}' AND VOL.FLAG_USE_MQD='Y' AND VOSS.QTY_OPEN <> 0 AND VOSS.DATE_DUE <>'1900-1-1' ORDER BY DATE_REQUIRED;",V.Local.sPart,V.Local.sLoc,V.Local.sSQL)
+			F.Data.DataTable.CreateFromSQL("dtSalesFor","con",V.Local.sSQL,True)
+			F.Intrinsic.Control.If(V.DataTable.dtSalesFor.RowCount,>,0)
+				Gui.frmSalesFor.txtPart.Text(V.Local.sPart)
+				Gui.frmSalesFor.txtLoc.Text(V.Local.sLoc)
+				F.Intrinsic.Control.CallSub(CalculateNet)
+				F.Intrinsic.Control.CallSub(LoadSalesForGV)
+				Gui.frmSalesFor..Show
+			F.Intrinsic.Control.EndIf
+			F.ODBC.Connection!con.Close
+		F.Intrinsic.Control.CaseElse
+			F.Intrinsic.Control.End
+
+	F.Intrinsic.Control.EndSelect
+
+	F.Intrinsic.Control.Catch
+		F.Intrinsic.String.Build("Project: {0}{1}{1}Subroutine: {2}{1}Error Occurred {3} with description {4}{1}{1}GAB Version: {5}",V.Ambient.ScriptPath,V.Ambient.Newline,V.Ambient.CurrentSubroutine,V.Ambient.ErrorNumber,V.Ambient.ErrorDescription,V.Ambient.GABVersion,V.Local.sError)
+		F.Intrinsic.UI.Msgbox(V.Local.sError)
+		F.Intrinsic.Control.End 
+	F.Intrinsic.Control.EndTry
+Program.Sub.Main.End
+
+Program.Sub.frmSalesFor_Unload.Start
+	F.Intrinsic.Control.Try
+	V.Local.sError.Declare
+
+	F.Intrinsic.Control.End
+
+	F.Intrinsic.Control.Catch
+		F.Intrinsic.String.Build("Project: {0}{1}{1}Subroutine: {2}{1}Error Occurred {3} with description {4}{1}{1}GAB Version: {5}",V.Ambient.ScriptPath,V.Ambient.Newline,V.Ambient.CurrentSubroutine,V.Ambient.ErrorNumber,V.Ambient.ErrorDescription,V.Ambient.GABVersion,V.Local.sError)
+		F.Intrinsic.UI.Msgbox(V.Local.sError)
+		F.Intrinsic.Control.End 
+	F.Intrinsic.Control.EndTry
+Program.Sub.frmSalesFor_Unload.End
+
+Program.Sub.CalculateNet.Start
+	F.Intrinsic.Control.Try
+	V.Local.sError.Declare
+	
+	V.Local.iCnt.Declare
+	V.Local.iBalance.Declare(Float)
+
+	V.Local.iBalance.Set(0)
+	F.Data.DataTable.AddColumn("dtSalesFor","BALANCE",Float,0)
+	F.Data.DataTable.AddRow("dtSalesFor","TYPE","On Hand","QUANTITY",V.Global.fQtyOnHand)
+	F.Data.DataTable.MoveRow("dtSalesFor",V.DataTable.dtSalesFor.RowCount--,0)
+	V.Local.iBalance.Set(V.Global.fQtyOnHand)
+	F.Intrinsic.Control.For(V.Local.iCnt,0,V.DataTable.dtSalesFor.RowCount--,1)
+		F.Intrinsic.Control.SelectCase(V.DataTable.dtSalesFor(V.Local.iCnt).TYPE!FieldVal)
+			F.Intrinsic.Control.CaseAny("SALES FORECAST","SALES ORDER")
+				F.Intrinsic.Math.Sub(V.Local.iBalance,V.DataTable.dtSalesFor(V.Local.iCnt).QUANTITY!FieldVal,V.Local.iBalance)
+			F.Intrinsic.Control.CaseAny("FORECAST","WORK ORDER")
+				F.Intrinsic.Math.Add(V.Local.iBalance,V.DataTable.dtSalesFor(V.Local.iCnt).QUANTITY!FieldVal,V.Local.iBalance)
+		F.Intrinsic.Control.EndSelect
+		F.Data.DataTable.SetValue("dtSalesFor",V.Local.iCnt,"BALANCE",V.Local.iBalance)
+	F.Intrinsic.Control.Next(V.Local.iCnt)
+
+	F.Intrinsic.Control.Catch
+		F.Intrinsic.String.Build("Project: {0}{1}{1}Subroutine: {2}{1}Error Occurred {3} with description {4}{1}{1}GAB Version: {5}",V.Ambient.ScriptPath,V.Ambient.Newline,V.Ambient.CurrentSubroutine,V.Ambient.ErrorNumber,V.Ambient.ErrorDescription,V.Ambient.GABVersion,V.Local.sError)
+		F.Intrinsic.UI.Msgbox(V.Local.sError)
+		F.Intrinsic.Control.End 
+	F.Intrinsic.Control.EndTry
+Program.Sub.CalculateNet.End
+
+Program.Sub.LoadSalesForGV.Start
+	F.Intrinsic.Control.Try
+	V.Local.sError.Declare
+
+	V.Local.iCnt.Declare
+	V.Local.sColumn.Declare
+	
+	'Set and Format Grid
+	Gui.frmSalesFor.GsGCForecast.SuspendLayout()
+	Gui.frmSalesFor.GsGCForecast.AddGridviewFromDatatable("gvSalesFor","dtSalesFor")
+	Gui.frmSalesFor.GsGCForecast.SetGridViewProperty("gvSalesFor","MultiSelect",True)
+	Gui.frmSalesFor.GsGCForecast.SetGridViewProperty("gvSalesFor","Editable",False)
+	Gui.frmSalesFor.GsGCForecast.SetGridViewProperty("gvSalesFor","ReadOnly",True)
+	Gui.frmSalesFor.GsGCForecast.SetGridViewProperty("gvSalesFor","AllowSort",False)
+	Gui.frmSalesFor.GsGCForecast.SetGridViewProperty("gvSalesFor","AllowFilter",True)
+	Gui.frmSalesFor.GsGCForecast.SetGridViewProperty("gvSalesFor","OptionsDetailShowDetailTabs",False)
+	Gui.frmSalesFor.GsGCForecast.SetGridViewProperty("gvSalesFor","OptionsViewShowGroupPanel",True)
+	Gui.frmSalesFor.GsGCForecast.SetGridViewProperty("gvSalesFor","EnableAppearanceOddRow",True)
+	
+	'Loop through columns names by using the V.DataTable.dtName.FieldNames
+	F.Intrinsic.String.Split(V.DataTable.dtSalesFor.FieldNames,"*!*",V.Local.sColumn)
+	F.Intrinsic.Control.For(V.Local.iCnt,0,V.Local.sColumn.UBound,1)
+		Gui.frmSalesFor.GsGCForecast.SetColumnProperty("gvSalesFor",V.Local.sColumn(V.Local.iCnt),"HeaderFontBold",True)
+	F.Intrinsic.Control.Next(V.Local.iCnt)
+	
+	'TYPE
+	V.Local.sColumn.Set("TYPE")
+	Gui.frmSalesFor.GsGCForecast.SetColumnProperty("gvSalesFor",V.Local.sColumn,"Caption","Type")
+	Gui.frmSalesFor.GsGCForecast.SetColumnProperty("gvSalesFor",V.Local.sColumn,"MinWidth","85")
+	Gui.frmSalesFor.GsGCForecast.SetColumnProperty("gvSalesFor",V.Local.sColumn,"HeaderHAlignment","Center")
+	Gui.frmSalesFor.GsGCForecast.SetColumnProperty("gvSalesFor",V.Local.sColumn,"CellHAlignment","Center")
+	Gui.frmSalesFor.GsGCForecast.AddSummaryItem("gvSalesFor",V.Local.sColumn,V.Local.sColumn,"Count","Count: ","",n0)
+	
+	'TYPE2
+	V.Local.sColumn.Set("TYPE2")
+	Gui.frmSalesFor.GsGCForecast.SetColumnProperty("gvSalesFor",V.Local.sColumn,"Caption","Order #")
+	Gui.frmSalesFor.GsGCForecast.SetColumnProperty("gvSalesFor",V.Local.sColumn,"MinWidth","85")
+	Gui.frmSalesFor.GsGCForecast.SetColumnProperty("gvSalesFor",V.Local.sColumn,"HeaderHAlignment","Center")
+	Gui.frmSalesFor.GsGCForecast.SetColumnProperty("gvSalesFor",V.Local.sColumn,"CellHAlignment","Center")
+	
+	'CUSTOMER
+	V.Local.sColumn.Set("CUSTOMER")
+	Gui.frmSalesFor.GsGCForecast.SetColumnProperty("gvSalesFor",V.Local.sColumn,"Caption","Customer No")
+	Gui.frmSalesFor.GsGCForecast.SetColumnProperty("gvSalesFor",V.Local.sColumn,"MinWidth","85")
+	Gui.frmSalesFor.GsGCForecast.SetColumnProperty("gvSalesFor",V.Local.sColumn,"HeaderHAlignment","Center")
+	Gui.frmSalesFor.GsGCForecast.SetColumnProperty("gvSalesFor",V.Local.sColumn,"CellHAlignment","Center")
+	
+	'SHIPTO
+	V.Local.sColumn.Set("SHIPTO")
+	Gui.frmSalesFor.GsGCForecast.SetColumnProperty("gvSalesFor",V.Local.sColumn,"Caption","Ship To")
+	Gui.frmSalesFor.GsGCForecast.SetColumnProperty("gvSalesFor",V.Local.sColumn,"MinWidth","45")
+	Gui.frmSalesFor.GsGCForecast.SetColumnProperty("gvSalesFor",V.Local.sColumn,"HeaderHAlignment","Center")
+	Gui.frmSalesFor.GsGCForecast.SetColumnProperty("gvSalesFor",V.Local.sColumn,"CellHAlignment","Center")
+	
+	'DATE_REQUIRED
+	V.Local.sColumn.Set("DATE_REQUIRED")
+	Gui.frmSalesFor.GsGCForecast.SetColumnProperty("gvSalesFor",V.Local.sColumn,"Caption","Date Required")
+	Gui.frmSalesFor.GsGCForecast.SetColumnProperty("gvSalesFor",V.Local.sColumn,"MinWidth","85")
+	Gui.frmSalesFor.GsGCForecast.SetColumnProperty("gvSalesFor",V.Local.sColumn,"HeaderHAlignment","Center")
+	Gui.frmSalesFor.GsGCForecast.SetColumnProperty("gvSalesFor",V.Local.sColumn,"CellHAlignment","Center")
+	Gui.frmSalesFor.GsGCForecast.SetColumnProperty("gvSalesFor",V.Local.sColumn,"DisplayCustomDateTime","d")
+	
+	'QUANTITY
+	V.Local.sColumn.Set("QUANTITY")
+	Gui.frmSalesFor.GsGCForecast.SetColumnProperty("gvSalesFor",V.Local.sColumn,"Caption","Quantity")
+	Gui.frmSalesFor.GsGCForecast.SetColumnProperty("gvSalesFor",V.Local.sColumn,"MinWidth","65")
+	Gui.frmSalesFor.GsGCForecast.SetColumnProperty("gvSalesFor",V.Local.sColumn,"HeaderHAlignment","Far")
+	Gui.frmSalesFor.GsGCForecast.SetColumnProperty("gvSalesFor",V.Local.sColumn,"CellHAlignment","Far")
+	Gui.frmSalesFor.GsGCForecast.SetColumnProperty("gvSalesFor",V.Local.sColumn,"DisplayCustomNumeric","n2")
+	'Gui.frmSalesFor.GsGCForecast.AddSummaryItem("gvSalesFor",V.Local.sColumn,V.Local.sColumn,"SUM","Total: ","",n2)
+	
+	'BALANCE
+	V.Local.sColumn.Set("BALANCE")
+	Gui.frmSalesFor.GsGCForecast.SetColumnProperty("gvSalesFor",V.Local.sColumn,"Caption","Balance")
+	Gui.frmSalesFor.GsGCForecast.SetColumnProperty("gvSalesFor",V.Local.sColumn,"MinWidth","65")
+	Gui.frmSalesFor.GsGCForecast.SetColumnProperty("gvSalesFor",V.Local.sColumn,"HeaderHAlignment","Far")
+	Gui.frmSalesFor.GsGCForecast.SetColumnProperty("gvSalesFor",V.Local.sColumn,"CellHAlignment","Far")
+	Gui.frmSalesFor.GsGCForecast.SetColumnProperty("gvSalesFor",V.Local.sColumn,"DisplayCustomNumeric","n2")
+	
+	Gui.frmSalesFor.GsGCForecast.MainView("gvSalesFor")
+	Gui.frmSalesFor.GsGCForecast.ResumeLayout()
+	
+	F.Intrinsic.Control.Catch
+		F.Intrinsic.String.Build("Project: {0}{1}{1}Subroutine: {2}{1}Error Occurred {3} with description {4}{1}{1}GAB Version: {5}",V.Ambient.ScriptPath,V.Ambient.Newline,V.Ambient.CurrentSubroutine,V.Ambient.ErrorNumber,V.Ambient.ErrorDescription,V.Ambient.GABVersion,V.Local.sError)
+		F.Intrinsic.UI.Msgbox(V.Local.sError)
+		F.Intrinsic.Control.End 
+	F.Intrinsic.Control.EndTry
+Program.Sub.LoadSalesForGV.End
+
+Program.Sub.cmdExport_Click.Start
+	F.Intrinsic.Control.Try
+	V.Local.sError.Declare
+	
+	V.Local.sFileExport.Declare
+	V.Local.bExcel.Declare
+	V.Local.bFileLocked.Declare
+	V.Local.sMsg.Declare
+	V.Local.sExt.Declare
+
+	F.Automation.MSExcel.CheckPresence(V.Local.bExcel)
+	F.Intrinsic.Control.If(V.Local.bExcel)
+		V.Local.sExt.Set("xlsx")
+	F.Intrinsic.Control.Else
+		V.Local.sExt.Set("csv")
+	F.Intrinsic.Control.EndIf
+	
+	F.Intrinsic.String.Build("{0}\GAB_5171_SalesFor_Export.{1}",V.Caller.LocalGssTempDir,V.Local.sExt,V.Local.sFileExport)
+	F.Intrinsic.File.IsFileLocked(V.Local.sFileExport,V.Local.bFileLocked)
+	F.Intrinsic.Control.If(V.Local.bFileLocked)
+		F.Intrinsic.String.Build("File is already open. Please close and export again.{0}File: {1}",V.Ambient.NewLine,V.Local.sFileExport,V.Local.sMsg)
+		F.Intrinsic.UI.Msgbox(V.Local.sMsg,"File In Use")
+	F.Intrinsic.Control.Else
+		Gui.frmSalesFor.GsGCForecast.Export(V.Local.sFileExport,V.Local.sExt)
+		F.Intrinsic.Task.ShellExec(0,"",V.Local.sFileExport,"","",1)
+	F.Intrinsic.Control.EndIf
+
+	F.Intrinsic.Control.Catch
+		F.Intrinsic.String.Build("Project: {0}{1}{1}Subroutine: {2}{1}Error Occurred {3} with description {4}{1}{1}GAB Version: {5}",V.Ambient.ScriptPath,V.Ambient.Newline,V.Ambient.CurrentSubroutine,V.Ambient.ErrorNumber,V.Ambient.ErrorDescription,V.Ambient.GABVersion,V.Local.sError)
+		F.Intrinsic.UI.Msgbox(V.Local.sError)
+		F.Intrinsic.Control.End 
+	F.Intrinsic.Control.EndTry
+Program.Sub.cmdExport_Click.End
+
+Program.Sub.Comments.Start
+${$0$}$$}$$}$12:00:00 AM$}$False
+${$5$}$2.0.0.0$}$2
+${$6$}$rrodriguez$}$20231024093427407$}$YnvOFTUOxTrnxbSzMvfBmnrP7dtKqN6ZKEdpzIv886pYYjvJTp6fCCfcIQSiYW2JiS/tHMj4LzzJHtOY7OslAw==
+Program.Sub.Comments.End
